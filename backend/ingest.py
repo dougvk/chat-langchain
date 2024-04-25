@@ -15,9 +15,19 @@ from langchain_community.vectorstores import Weaviate
 from langchain_core.embeddings import Embeddings
 from langchain_openai import OpenAIEmbeddings
 
+### DOUG IMPORTS
+from langchain_community.document_loaders import GitbookLoader
+import pickle
+import gzip
+import os
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def load_documents_from_disk(file_path):
+  with gzip.open(file_path, 'rb') as file:
+    documents = pickle.load(file)
+  return documents
 
 def get_embeddings_model() -> Embeddings:
     return OpenAIEmbeddings(model="text-embedding-3-small", chunk_size=200)
@@ -93,6 +103,12 @@ def load_api_docs():
         ),
     ).load()
 
+def load_hedera_docs():
+  # Load previously processed documents and summaries
+  docs = load_documents_from_disk('documents.pkl')
+  summaries = load_documents_from_disk('summaries.pkl')
+  return (docs, summaries)
+
 
 def ingest_docs():
     WEAVIATE_URL = os.environ["WEAVIATE_URL"]
@@ -120,17 +136,13 @@ def ingest_docs():
     )
     record_manager.create_schema()
 
-    docs_from_documentation = load_langchain_docs()
-    logger.info(f"Loaded {len(docs_from_documentation)} docs from documentation")
-    docs_from_api = load_api_docs()
-    logger.info(f"Loaded {len(docs_from_api)} docs from API")
-    docs_from_langsmith = load_langsmith_docs()
-    logger.info(f"Loaded {len(docs_from_langsmith)} docs from Langsmith")
+    logger.info(f"Current working directory: {os.getcwd()}")
+    docs, _ = load_hedera_docs()
+    logger.info(f"Loaded {len(docs)} docs from Hedera")
 
     docs_transformed = text_splitter.split_documents(
-        docs_from_documentation + docs_from_api + docs_from_langsmith
+        docs
     )
-    docs_transformed = [doc for doc in docs_transformed if len(doc.page_content) > 10]
 
     # We try to return 'source' and 'title' metadata when querying vector store and
     # Weaviate will error at query time if one of the attributes is missing from a
