@@ -29,6 +29,7 @@ import { apiBaseUrl } from "../utils/constants";
 
 const MODEL_TYPES = [
   "openai_gpt_3_5_turbo",
+  "gpt_4",
   "anthropic_claude_3_sonnet",
   "google_gemini_pro",
   "fireworks_mixtral",
