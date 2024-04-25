@@ -62,6 +62,10 @@ export function ChatWindow(props: { conversationId: string }) {
   >([]);
 
   const sendMessage = async (message?: string) => {
+    let accumulatedMessage = "";
+    let runId: string | undefined = undefined;
+    let sources: Source[] | undefined = undefined;
+    
     if (messageContainerRef.current) {
       messageContainerRef.current.classList.add("grow");
     }
@@ -76,11 +80,6 @@ export function ChatWindow(props: { conversationId: string }) {
       { id: Math.random().toString(), content: messageValue, role: "user" },
     ]);
     setIsLoading(true);
-
-    let accumulatedMessage = "";
-    let runId: string | undefined = undefined;
-    let sources: Source[] | undefined = undefined;
-    let messageIndex: number | null = null;
 
     let renderer = new Renderer();
     renderer.paragraph = (text) => {
@@ -152,30 +151,23 @@ export function ChatWindow(props: { conversationId: string }) {
         if (Array.isArray(streamedResponse?.streamed_output)) {
           accumulatedMessage = streamedResponse.streamed_output.join("");
         }
-        const parsedResult = marked.parse(accumulatedMessage);
-
-        setMessages((prevMessages) => {
-          let newMessages = [...prevMessages];
-          if (
-            messageIndex === null ||
-            newMessages[messageIndex] === undefined
-          ) {
-            messageIndex = newMessages.length;
-            newMessages.push({
-              id: Math.random().toString(),
-              content: parsedResult.trim(),
-              runId: runId,
-              sources: sources,
-              role: "assistant",
-            });
-          } else if (newMessages[messageIndex] !== undefined) {
-            newMessages[messageIndex].content = parsedResult.trim();
-            newMessages[messageIndex].runId = runId;
-            newMessages[messageIndex].sources = sources;
-          }
-          return newMessages;
-        });
       }
+
+      console.log("Final received reply:", accumulatedMessage);
+
+      const parsedResult = marked.parse(accumulatedMessage);
+
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        {
+          id: Math.random().toString(),
+          content: parsedResult.trim(),
+          runId: runId,
+          sources: sources,
+          role: "assistant",
+        },
+      ]);
+
       setChatHistory((prevChatHistory) => [
         ...prevChatHistory,
         { human: messageValue, ai: accumulatedMessage },
