@@ -148,7 +148,9 @@ export function ChatWindow(props: { conversationId: string }) {
         if (streamedResponse.id !== undefined) {
           runId = streamedResponse.id;
         }
-        if (Array.isArray(streamedResponse?.streamed_output)) {
+        if (streamedResponse.final_output !== undefined) {
+          accumulatedMessage = streamedResponse.final_output;
+        } else if (Array.isArray(streamedResponse?.streamed_output)) {
           accumulatedMessage = streamedResponse.streamed_output.join("");
         }
       }
